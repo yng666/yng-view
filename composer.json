@@ -1,0 +1,28 @@
+{
+    "name": "yng/view",
+    "license": "Apache-2.0",
+    "homepage": "https://www.chinaqe.cn",
+    "description": "A view engine that supports Blade, Smarty, twig, and can be extended.",
+    "authors": [
+        {
+            "name": "yng",
+            "homepage": "https://www.chinaqe.cn"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Yng\\View\\": "src/"
+        }
+    },
+
+    "require": {
+        "php": "^7.4|^8.0"
+    },
+    "extra": {
+        "yng": {
+            "config": {
+                "view": "publish/view.php"
+            }
+        }
+    }
+}
