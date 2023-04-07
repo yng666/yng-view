@@ -1,0 +1,19 @@
+{
+    "name": "yng/yng-view",
+    "license": "Apache-2.0",
+    "description": "A simple blade view engine of YngPHP.",
+    "authors": [
+        {
+            "name": "yng",
+            "email": "840638148@qq.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Yng\\View\\": "src/"
+        }
+    }
+}
