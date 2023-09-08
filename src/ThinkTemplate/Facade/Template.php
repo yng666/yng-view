@@ -1,5 +1,5 @@
 <?php
-namespace Yng\View\Facade;
+namespace Yng\View\ThinkTemplate\Facade;
 
 if (class_exists('Yng\Facade')) {
     class Facade extends \Yng\Facade{}
@@ -30,7 +30,7 @@ if (class_exists('Yng\Facade')) {
          */
         protected static function createFacade()
         {
-            $class = static::getFacadeClass() ?: 'Yng\View\Template';
+            $class = static::getFacadeClass() ?: 'Yng\View\ThinkTemplate\Template';
 
             if (static::$alwaysNewInstance) {
                 return new $class();
@@ -53,8 +53,8 @@ if (class_exists('Yng\Facade')) {
 }
 
 /**
- * @see \Yng\Template
- * @mixin \Yng\Template
+ * @see \Yng\View\ThinkTemplate\Template
+ * @mixin \Yng\View\ThinkTemplate\Template
  */
 class Template extends Facade
 {
@@ -67,6 +67,6 @@ class Template extends Facade
      */
     protected static function getFacadeClass()
     {
-        return 'Yng\View\Template';
+        return 'Yng\View\ThinkTemplate\Template';
     }
 }

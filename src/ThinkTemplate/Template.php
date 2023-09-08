@@ -1,13 +1,13 @@
 <?php
 declare (strict_types = 1);
 
-namespace Yng\View;
+namespace Yng\View\ThinkTemplate;
 
 use Exception;
 use Psr\SimpleCache\CacheInterface;
 
 /**
- * YngPHP分离出来的模板引擎
+ * ThinkPHP分离出来的模板引擎
  * 支持XML标签和普通标签的模板解析
  * 编译型模板引擎 支持动态缓存
  */
@@ -25,14 +25,14 @@ class Template
      */
     protected $config = [
         'view_path'          => '', // 模板路径
-        'view_suffix'        => 'php', // 默认模板文件后缀
+        'view_suffix'        => 'html', // 默认模板文件后缀
         'view_depr'          => DIRECTORY_SEPARATOR,
         'cache_path'         => '',
         'cache_suffix'       => 'php', // 默认模板缓存后缀
         'tpl_deny_func_list' => 'echo,exit', // 模板引擎禁用函数
         'tpl_deny_php'       => false, // 默认模板引擎是否禁用PHP原生代码
-        'tpl_begin'          => '{{', // 模板引擎普通标签开始标记
-        'tpl_end'            => '}}', // 模板引擎普通标签结束标记
+        'tpl_begin'          => '{', // 模板引擎普通标签开始标记
+        'tpl_end'            => '}', // 模板引擎普通标签结束标记
         'strip_space'        => false, // 是否去除模板文件里面的html空格与换行
         'tpl_cache'          => true, // 是否开启模板编译缓存,设为false则每次都会重新编译
         'compile_type'       => 'file', // 模板编译类型
@@ -102,7 +102,7 @@ class Template
 
         // 初始化模板编译存储器
         $type  = $this->config['compile_type'] ? $this->config['compile_type'] : 'File';
-        $class = false !== strpos($type, '\\') ? $type : '\\think\\template\\driver\\' . ucwords($type);
+        $class = false !== strpos($type, '\\') ? $type : '\\Yng\\View\\ThinkTemplate\\Driver\\' . ucwords($type);
 
         $this->storage = new $class();
     }
@@ -789,7 +789,7 @@ class Template
             $className = $tagLib;
             $tagLib    = substr($tagLib, strrpos($tagLib, '\\') + 1);
         } else {
-            $className = '\\think\\template\\taglib\\' . ucwords($tagLib);
+            $className = '\\Yng\\View\\ThinkTemplate\\Taglib\\' . ucwords($tagLib);
         }
 
         $tLib = new $className($this);

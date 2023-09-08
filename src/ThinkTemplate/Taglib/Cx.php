@@ -1,7 +1,7 @@
 <?php
-namespace Yng\View\Template\taglib;
+namespace Yng\View\ThinkTemplate\Taglib;
 
-use Yng\View\Template\TagLib;
+use Yng\View\ThinkTemplate\TagLib;
 
 /**
  * CX标签库解析类
@@ -40,7 +40,7 @@ class Cx extends Taglib
     /**
      * php标签解析
      * 格式：
-     * {php}echo $name{/php}
+     * {{@php}}echo $name{{@endphp}}
      * @access public
      * @param  array $tag 标签属性
      * @param  string $content 标签内容
@@ -55,10 +55,10 @@ class Cx extends Taglib
     /**
      * volist标签解析 循环输出数据集
      * 格式：
-     * {volist name="userList" id="user" empty=""}
-     * {user.username}
-     * {user.email}
-     * {/volist}
+     * {{volist name="userList" id="user" empty=""}}
+     * {{user.username}}
+     * {{user.email}}
+     * {{/volist}}
      * @access public
      * @param  array $tag 标签属性
      * @param  string $content 标签内容
@@ -108,9 +108,9 @@ class Cx extends Taglib
     /**
      * foreach标签解析 循环输出数据集
      * 格式：
-     * {foreach name="userList" id="user" key="key" index="i" mod="2" offset="3" length="5" empty=""}
-     * {user.username}
-     * {/foreach}
+     * {{@foreach name="userList" id="user" key="key" index="i" mod="2" offset="3" length="5" empty=""}}
+     * {{user.username}}
+     * {{@endforeach}}
      * @access public
      * @param  array $tag 标签属性
      * @param  string $content 标签内容
@@ -127,6 +127,7 @@ class Cx extends Taglib
             $parseStr .= '<?php endforeach; ?>';
             return $parseStr;
         }
+
 
         $name   = $tag['name'];
         $key    = !empty($tag['key']) ? $tag['key'] : 'key';
@@ -147,7 +148,7 @@ class Cx extends Taglib
             $name = $this->autoBuildVar($name);
         }
 
-        $parseStr .= 'if(is_array(' . $name . ') || ' . $name . ' instanceof \Yng\Collection || ' . $name . ' instanceof \Yng\Paginator): ';
+        $parseStr .= 'if(is_array(' . $name . ') || ' . $name . ' instanceof \Yng\Helper\Collection || ' . $name . ' instanceof \Yng\Paginator): ';
 
         // 设置了输出数组长度
         if (0 != $offset || 'null' != $length) {
@@ -191,10 +192,10 @@ class Cx extends Taglib
     /**
      * if标签解析
      * 格式：
-     * {if condition=" $a eq 1"}
-     * {elseif condition="$a eq 2" /}
-     * {else /}
-     * {/if}
+     * {{if condition=" $a eq 1"}}
+     * {{elseif condition="$a eq 2" /}}
+     * {{else /}}
+     * {{/if}}
      * 表达式支持 eq neq gt egt lt elt == > >= < <= or and || &&
      * @access public
      * @param  array $tag 标签属性

@@ -5,10 +5,9 @@ namespace Yng\View\Driver;
 
 use Yng\App;
 use Yng\Helper\Str;
-use Yng\View\Template;
-use Yng\View\Template\Exception\TemplateNotFoundException;
+use Yng\View\BladeXTemplate\BladeXTemplate;
 
-class Blade
+class BladeX
 {
     // 模板引擎实例
     private $template;
@@ -16,14 +15,12 @@ class Blade
 
     // 模板引擎参数
     protected $config = [
-        // 默认模板渲染规则 1 解析为小写+下划线 2 全部转换小写 3 保持操作方法
-        'auto_rule'     => 1,
         // 视图目录名
-        'view_dir_name' => 'view',
+        'view_dir_name' => 'views',
         // 模板起始路径
         'view_path'     => '',
         // 模板文件后缀
-        'view_suffix'   => 'html',
+        'view_suffix'   => 'php',
         // 模板文件名分隔符
         'view_depr'     => DIRECTORY_SEPARATOR,
         // 是否开启模板编译缓存,设为false则每次都会重新编译
@@ -37,56 +34,10 @@ class Blade
         $this->config = array_merge($this->config, (array) $config);
 
         if (empty($this->config['cache_path'])) {
-            $this->config['cache_path'] = $app->getStoragePath() . 'framework'.DIRECTORY_SEPARATOR.'views';
+            $this->config['cache_path'] = $app->getStoragePath() . 'framework' . DIRECTORY_SEPARATOR.'views';
         }
 
-        $this->template = new Template($this->config);
-        $this->template->setCache($app->cache);
-        $this->template->extend('$Think', function (array $vars) {
-            $type  = strtoupper(trim(array_shift($vars)));
-            $param = implode('.', $vars);
-
-            switch ($type) {
-                case 'CONST':
-                    $parseStr = strtoupper($param);
-                    break;
-                case 'CONFIG':
-                    $parseStr = 'config(\'' . $param . '\')';
-                    break;
-                case 'LANG':
-                    $parseStr = 'lang(\'' . $param . '\')';
-                    break;
-                case 'NOW':
-                    $parseStr = "date('Y-m-d g:i a',time())";
-                    break;
-                case 'LDELIM':
-                    $parseStr = '\'' . ltrim($this->getConfig('tpl_begin'), '\\') . '\'';
-                    break;
-                case 'RDELIM':
-                    $parseStr = '\'' . ltrim($this->getConfig('tpl_end'), '\\') . '\'';
-                    break;
-                default:
-                    $parseStr = defined($type) ? $type : '\'\'';
-            }
-
-            return $parseStr;
-        });
-
-        $this->template->extend('$Request', function (array $vars) {
-            // 获取Request请求对象参数
-            $method = array_shift($vars);
-            if (!empty($vars)) {
-                $params = implode('.', $vars);
-                if ('true' != $params) {
-                    $params = '\'' . $params . '\'';
-                }
-            } else {
-                $params = '';
-            }
-
-            return 'app(\'request\')->' . $method . '(' . $params . ')';
-        });
-
+        $this->template = $app->make(BladeXTemplate::class,['app' => $app,'config' => $this->config]);
     }
 
     /**
@@ -105,6 +56,7 @@ class Blade
         return is_file($template);
     }
 
+
     /**
      * 渲染模板文件
      * @access public
@@ -114,7 +66,6 @@ class Blade
      */
     public function render(string $template, array $data = []): void
     {
-        dd(54561454);
         if (empty($this->config['view_path'])) {
             $view = $this->config['view_dir_name'];
 
@@ -126,32 +77,10 @@ class Blade
             }
 
             $this->config['view_path'] = $path;
-            $this->template->view_path = $path;
+            $this->template->config['view_path'] = $path;
         }
 
-        if ('' == pathinfo($template, PATHINFO_EXTENSION)) {
-            // 获取模板文件名
-            $template = $this->parseTemplate($template);
-        }
-
-        // 模板不存在 抛出异常
-        if (!is_file($template)) {
-            throw new TemplateNotFoundException('template not exists:' . $template, $template);
-        }
-
-        $this->template->fetch($template, $data);
-    }
-
-    /**
-     * 渲染模板内容
-     * @access public
-     * @param  string $template 模板内容
-     * @param  array  $data 模板变量
-     * @return void
-     */
-    public function display(string $template, array $data = []): void
-    {
-        $this->template->display($template, $data);
+        $this->template->render($template, $data);
     }
 
     /**
@@ -181,7 +110,7 @@ class Blade
                 $path = $this->app->getRootPath() . $view . DIRECTORY_SEPARATOR . $app . DIRECTORY_SEPARATOR;
             }
 
-            $this->template->view_path = $path;
+            $this->template['view_path'] = $path;
         } else {
             $path = $this->config['view_path'];
         }
@@ -222,31 +151,4 @@ class Blade
         return $path . ltrim($template, '/') . '.' . ltrim($this->config['view_suffix'], '.');
     }
 
-    /**
-     * 配置模板引擎
-     * @access private
-     * @param  array  $config 参数
-     * @return void
-     */
-    public function config(array $config): void
-    {
-        $this->template->config($config);
-        $this->config = array_merge($this->config, $config);
-    }
-
-    /**
-     * 获取模板引擎配置
-     * @access public
-     * @param  string  $name 参数名
-     * @return void
-     */
-    public function getConfig(string $name)
-    {
-        return $this->template->getConfig($name);
-    }
-
-    public function __call($method, $params)
-    {
-        return call_user_func_array([$this->template, $method], $params);
-    }
 }

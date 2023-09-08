@@ -1,8 +1,8 @@
 <?php
-namespace Yng\View\Template;
+namespace Yng\View\ThinkTemplate;
 
 use Exception;
-use Yng\View\Template;
+use Yng\View\ThinkTemplate\Template;
 
 /**
  * YngPHP标签库TagLib解析基类
@@ -77,7 +77,7 @@ class TagLib
         $lib  = $lib ? strtolower($lib) . ':' : '';
 
         foreach ($this->tags as $name => $val) {
-            $close                      = !isset($val['close']) || $val['close'] ? 1 : 0;
+            $close = !isset($val['close']) || $val['close'] ? 1 : 0;
             $tags[$close][$lib . $name] = $name;
             if (isset($val['alias'])) {
                 // 别名设置

@@ -1,5 +1,5 @@
 <?php
-namespace Yng\View\Template\Driver;
+namespace Yng\View\ThinkTemplate\Driver;
 
 use Exception;
 
