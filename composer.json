@@ -12,6 +12,10 @@
         "php": ">=7.3"
     },
     "autoload": {
+        "files": [
+            "src/helper.php",
+            "src/Support/helpers.php"
+        ],
         "psr-4": {
             "Yng\\View\\": "src/"
         }
