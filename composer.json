@@ -13,7 +13,7 @@
     },
     "autoload": {
         "files": [
-            "src/helper.php",
+            "src/BladeXTemplate/helper.php",
             "src/Support/helpers.php"
         ],
         "psr-4": {
