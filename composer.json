@@ -14,7 +14,7 @@
     "autoload": {
         "files": [
             "src/BladeXTemplate/helper.php",
-            "src/Support/helpers.php"
+            "src/BladeXTemplate/Support/helpers.php"
         ],
         "psr-4": {
             "Yng\\View\\": "src/"
