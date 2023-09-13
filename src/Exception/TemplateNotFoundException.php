@@ -30,4 +30,5 @@ class TemplateNotFoundException extends \Exception
     {
         return $this->line;
     }
+
 }
