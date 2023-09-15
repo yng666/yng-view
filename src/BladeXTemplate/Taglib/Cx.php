@@ -1,7 +1,7 @@
 <?php
-namespace Yng\View\ThinkTemplate\Taglib;
+namespace Yng\View\BladeXTemplate\Taglib;
 
-use Yng\View\ThinkTemplate\TagLib;
+use Yng\View\BladeXTemplate\TagLib;
 
 /**
  * CX标签库解析类
@@ -13,7 +13,7 @@ class Cx extends Taglib
     protected $tags = [
         // 标签定义： attr 属性列表 close 是否闭合（0 或者1 默认1） alias 标签别名 level 嵌套层次
         'php'        => ['attr' => ''],
-        'volist'     => ['attr' => 'name,id,offset,length,key,mod', 'alias' => 'iterate'],
+        // 'volist'     => ['attr' => 'name,id,offset,length,key,mod', 'alias' => 'iterate'],
         'foreach'    => ['attr' => 'name,id,item,key,offset,length,mod', 'expression' => true],
         'if'         => ['attr' => 'condition', 'expression' => true],
         'elseif'     => ['attr' => 'condition', 'close' => 0, 'expression' => true],
@@ -127,7 +127,6 @@ class Cx extends Taglib
             $parseStr .= '<?php endforeach; ?>';
             return $parseStr;
         }
-
 
         $name   = $tag['name'];
         $key    = !empty($tag['key']) ? $tag['key'] : 'key';

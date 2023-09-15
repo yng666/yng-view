@@ -5,26 +5,28 @@ declare(strict_types = 1);
 namespace Yng\View\Driver;
 
 use Yng\App;
-use Yng\View\BladeXTemplate\BladeInstance;
-use Yng\View\BladeXTemplate\Support\Str;
+use Yng\View\BladeXTemplate\XTemplate;
+
+use Yng\Helper\Str;
 use Yng\Contract\TemplateHandlerInterface;
-use Yng\Facade\Log;
 use Yng\View\Exception\TemplateNotFoundException;
 
+
+/**
+ * BladeX引擎
+ */
 class BladeX implements TemplateHandlerInterface
 {
-    // Blade 引擎实例
-    private $blade;
+    // BladeX 引擎实例
+    private $bladeX;
     private $app;
 
     // 模板引擎参数
     protected $config = [
-        // 模版主题
-        'theme' => '',
         // 缓存路径
-        'compiled' => '',
-        // 默认模板渲染规则 1 解析为小写+下划线 2 全部转换小写 3 保持操作方法
-        'auto_rule' => 1,
+        'cache_path' => '',
+        // // 默认模板渲染规则 1 解析为小写+下划线 2 全部转换小写 3 保持操作方法
+        // 'auto_rule' => 1,
         // 视图目录名
         'view_dir_name' => 'views',
         // 模板起始路径
@@ -42,13 +44,8 @@ class BladeX implements TemplateHandlerInterface
         $this->app = $app;
         $this->config = array_merge($this->config, (array) $config);
 
-        if (empty($this->config['compiled'])) {
-            $this->config['compiled'] = $app->getStoragePath() . 'framework' . DIRECTORY_SEPARATOR;
-        }
-
-        // 缓存主题路径
-        if (!empty($this->config['theme'])) {
-            $this->config['compiled'] .= $this->config['theme'] . DIRECTORY_SEPARATOR;
+        if (empty($this->config['cache_path'])) {
+            $this->config['cache_path'] = $app->getStoragePath() . 'framework' . DIRECTORY_SEPARATOR .'views';
         }
 
         // debug 不缓存
@@ -56,20 +53,54 @@ class BladeX implements TemplateHandlerInterface
             $this->config['tpl_cache'] = false;
         }
 
-        if (empty($this->config['view_path'])) {
-            $path = $app->getAppPath() .'view'. DIRECTORY_SEPARATOR;
-        } else {
-            $path = realpath($this->config['view_path']) . DIRECTORY_SEPARATOR .'view'. DIRECTORY_SEPARATOR;
-        }
+        $this->bladeX = new XTemplate($this->config);
+        $this->bladeX->setCache($app->cache);
 
-        $this->blade = (new BladeInstance(
-            $app,
-            $path,
-            $this->config['compiled'],
-            $this->config['tpl_cache'],
-        ))->getViewFactory();
+        $this->bladeX->extend('$Yng', function (array $vars) {
+            $type  = strtoupper(trim(array_shift($vars)));
+            $param = implode('.', $vars);
 
-        $this->blade->addExtension($this->config['view_suffix'] ?: 'blade.php', 'blade');
+            switch ($type) {
+                case 'CONST':
+                    $parseStr = strtoupper($param);
+                break;
+                case 'CONFIG':
+                    $parseStr = 'config(\'' . $param . '\')';
+                break;
+                case 'LANG':
+                    $parseStr = 'lang(\'' . $param . '\')';
+                break;
+                case 'NOW':
+                    $parseStr = "date('Y-m-d H:i:s',time())";
+                break;
+                case 'LDELIM':
+                    $parseStr = '\'' . ltrim($this->getConfig('tpl_begin'), '\\') . '\'';
+                break;
+                case 'RDELIM':
+                    $parseStr = '\'' . ltrim($this->getConfig('tpl_end'), '\\') . '\'';
+                break;
+                default:
+                    $parseStr = defined($type) ? $type : '\'\'';
+                break;
+            }
+
+            return $parseStr;
+        });
+
+        $this->bladeX->extend('$Request', function (array $vars) {
+            // 获取Request请求对象参数
+            $method = array_shift($vars);
+            if (!empty($vars)) {
+                $params = implode('.', $vars);
+                if ('true' != $params) {
+                    $params = '\'' . $params . '\'';
+                }
+            } else {
+                $params = '';
+            }
+
+            return 'app(\'request\')->' . $method . '(' . $params . ')';
+        });
     }
 
     /**
@@ -80,9 +111,8 @@ class BladeX implements TemplateHandlerInterface
      */
     public function exists(string $template): bool
     {
-        $template = $this->normalize($template);
-
         if ('' == pathinfo($template, PATHINFO_EXTENSION)) {
+            // 获取模板文件名
             $template = $this->parseTemplate($template);
         }
 
@@ -98,34 +128,31 @@ class BladeX implements TemplateHandlerInterface
      */
     public function render(string $template, array $data = []): void
     {
-        $templatePath = '';
+        if (empty($this->config['view_path'])) {
+            $view = $this->config['view_dir_name'];
 
-        $template = $this->normalize($template);
-
-        if ('' == pathinfo($template, PATHINFO_EXTENSION)) {
-            $templatePath = $this->parseTemplate($template);
-        }
-        // dd($templatePath);
-
-        // 模板不存在 抛出异常
-        if (!$templatePath || !is_file($templatePath)) {
-
-            $app = $this->app->http->getName();
-            $controller = $this->app->request->controller();
-
-            $errorTemplate = $this->normalize($template, true);
-            if (strpos($path, '@') === false && strpos($template, '/') === false) {
-                $errorTemplate = $app .'@'. $controller .'.'. $errorTemplate;
+            if (is_dir($this->app->getAppPath() . $view)) {
+                $path = $this->app->getAppPath() . $view . DIRECTORY_SEPARATOR;
+            } else {
+                $appName = $this->app->http->getName();
+                $path    = $this->app->getRootPath() . $view . DIRECTORY_SEPARATOR . ($appName ? $appName . DIRECTORY_SEPARATOR : '');
             }
 
-            throw new TemplateNotFoundException('View not exists: ' . $errorTemplate,$templatePath);
-            throw new TemplateNotFoundException('View not exists:' . $this->normalize($template, true), $templatePath);
+            $this->config['view_path'] = $path;
+            $this->bladeX->view_path = $path;
         }
 
-        // 记录视图信息
-        $this->app['log']->record('[ VIEW ] ' . $template . ' [ ' . var_export(array_keys($data), true) . ' ]');
+        if ('' == pathinfo($template, PATHINFO_EXTENSION)) {
+            // 获取模板文件名
+            $template = $this->parseTemplate($template);
+        }
 
-        echo $this->blade->file($templatePath, $data)->render();
+        // 模板不存在 抛出异常
+        if (!is_file($template)) {
+            throw new TemplateNotFoundException('template not exists:' . $template, $template);
+        }
+
+        $this->bladeX->fetch($template, $data);
     }
 
     /**
@@ -137,7 +164,7 @@ class BladeX implements TemplateHandlerInterface
      */
     public function display(string $template, array $data = []): void
     {
-        echo $this->fetch($template, $data);
+        $this->bladeX->display($template, $data);
     }
 
     /**
@@ -167,6 +194,7 @@ class BladeX implements TemplateHandlerInterface
                 $path = $this->app->getRootPath() . $view . DIRECTORY_SEPARATOR . $app . DIRECTORY_SEPARATOR;
             }
 
+            $this->bladeX->view_path = $path;
         } else {
             $path = $this->config['view_path'];
         }
@@ -186,14 +214,15 @@ class BladeX implements TemplateHandlerInterface
 
             if ($controller) {
                 if ('' == $template) {
+                    // 如果模板文件名为空 
                     // 如果模板文件名为空 按照默认模板渲染规则定位
-                    if (2 == $this->config['auto_rule']) {
-                        $template = $request->action(true);
-                    } elseif (3 == $this->config['auto_rule']) {
-                        $template = $request->action();
-                    } else {
+                    // if (2 == $this->config['auto_rule']) {
+                    //     $template = $request->action(true);
+                    // } elseif (3 == $this->config['auto_rule']) {
+                    //     $template = $request->action();
+                    // } else {
                         $template = Str::snake($request->action());
-                    }
+                    // }
 
                     $template = str_replace('.', DIRECTORY_SEPARATOR, $controller) . $depr . $template;
                 } elseif (false === strpos($template, $depr)) {
@@ -207,24 +236,7 @@ class BladeX implements TemplateHandlerInterface
         return $path . ltrim($template, '/') . '.' . ltrim($this->config['view_suffix'], '.');
     }
 
-    /**
-     * 规范化给定模板
-     *
-     * @param  string  $name
-     * @return string
-     */
-    private function normalize($template = '', $isRaw = false)
-    {
-        if($isRaw && strpos($template, '/')) {
-            return str_replace('/', '.', $template);
-        }
 
-        if (strpos($template, '.')) {
-            $template = str_replace('.', DIRECTORY_SEPARATOR, $template);
-        }
-
-        return $template;
-    }
 
     /**
      * 配置模板引擎
@@ -234,6 +246,7 @@ class BladeX implements TemplateHandlerInterface
      */
     public function config(array $config): void
     {
+        $this->bladeX->config($config);
         $this->config = array_merge($this->config, $config);
     }
 
@@ -245,19 +258,11 @@ class BladeX implements TemplateHandlerInterface
      */
     public function getConfig(string $name)
     {
-        return $this->config[$name];
-    }
-
-    public function __debugInfo()
-    {
-        return [
-            'config' => $this->config,
-            'blade' => $this->blade
-        ];
+        return $this->bladeX->getConfig($name);
     }
 
     public function __call($method, $params)
     {
-        return call_user_func_array([$this->blade, $method], $params);
+        return call_user_func_array([$this->bladeX, $method], $params);
     }
 }
