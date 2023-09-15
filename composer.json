@@ -5,17 +5,13 @@
     "authors": [
         {
             "name": "yng",
-            "email": "840638148@qq.com"
+            "email": "xxxxxx@qq.com"
         }
     ],
     "require": {
         "php": ">=7.3"
     },
     "autoload": {
-        "files": [
-            "src/BladeXTemplate/helper.php",
-            "src/BladeXTemplate/Support/helpers.php"
-        ],
         "psr-4": {
             "Yng\\View\\": "src/"
         }
